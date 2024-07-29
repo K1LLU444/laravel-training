@@ -4,12 +4,12 @@ namespace App\Http\Requests\Auth;
 
 use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-
 class LoginRequest extends FormRequest
 {
     /**
@@ -45,6 +45,14 @@ class LoginRequest extends FormRequest
         $user = User::withTrashed()
         ->whereEmail($this->string('email'))
         ->first();
+
+        if($user->deleted_at){
+            Session::flash('is_deactivated', true);
+
+            throw ValidationException::withMessages(
+                ['email' => 'your account is deactivated',]
+            );
+        }
         
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
